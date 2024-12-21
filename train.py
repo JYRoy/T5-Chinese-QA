@@ -16,7 +16,7 @@ pretrained_model = "uer/t5-base-chinese-cluecorpussmall"
 max_source_seq_len = 256
 max_target_seq_len = 32
 batch_size = 16
-num_train_epochs = 10
+num_train_epochs = 20
 valid_steps = 200
 logging_steps = 10
 learning_rate = 5e-5
@@ -89,12 +89,13 @@ def collate_fn(batch):
 
 
 # 绘制收敛曲线
-def plot_loss(losses, name):
-    plt.plot(losses)
+def plot_metrics(value, name):
+    plt.figure()
+    plt.plot(value)
     plt.xlabel("Batch")
-    plt.ylabel("Loss")
+    plt.ylabel(f"{name}")
     plt.title(f"{name}")
-    plt.savefig(f"log/{name}.png", overwrite=True)
+    plt.savefig(f"log/{name}.png")
 
 
 def evaluate_model(data_loader):
@@ -234,10 +235,20 @@ def train():
                 tokenizer.save_pretrained(os.path.join(cur_save_dir))
 
                 bleu1, bleu2, bleu3, bleu4 = evaluate_model(eval_dataloader)
+                print(
+                    "Evaluation bleu1: %.5f, bleu2: %.5f, bleu3: %.5f, bleu4: %.5f"
+                    % (bleu1, bleu2, bleu3, bleu4)
+                )
                 bleu1_list.append(bleu1)
                 bleu2_list.append(bleu2)
                 bleu3_list.append(bleu3)
                 bleu4_list.append(bleu4)
+
+                plot_metrics(loss_list, "loss")
+                plot_metrics(bleu1_list, "bleu1")
+                plot_metrics(bleu2_list, "bleu2")
+                plot_metrics(bleu3_list, "bleu3")
+                plot_metrics(bleu4_list, "bleu4")
 
                 print("Evaluation bleu4: %.5f" % (bleu4))
                 if bleu4 > best_bleu4:
@@ -251,11 +262,6 @@ def train():
                     model.save_pretrained(os.path.join(cur_save_dir))
                     tokenizer.save_pretrained(os.path.join(cur_save_dir))
                 tic_train = time.time()
-    plot_loss(loss_list, "loss")
-    plot_loss(bleu1_list, "bleu1")
-    plot_loss(bleu2_list, "bleu2")
-    plot_loss(bleu3_list, "bleu3")
-    plot_loss(bleu4_list, "bleu4")
 
 
 if __name__ == "__main__":
